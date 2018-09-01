@@ -18,8 +18,9 @@ class Agent:
     #
     # Do not add any variables to this signature; they will not be used by
     # main().
+
     def __init__(self):
-        pass
+        from PIL import Image
 
     # The primary method for solving incoming Raven's Progressive Matrices.
     # For each problem, your Agent's Solve() method will be called. At the
@@ -31,4 +32,8 @@ class Agent:
     # Make sure to return your answer *as an integer* at the end of Solve().
     # Returning your answer as a string may cause your program to crash.
     def Solve(self,problem):
+        from PIL import Image
+        for key,value in problem.figures.items():
+            img = Image.open(value.visualFilename)
+            img.show()
         return -1
