@@ -31,8 +31,10 @@ w_range = range(width+w_pad)
 h_range = range(height+h_pad)
 for w in w_range[2::2]:
     for h in h_range[2::2]:
-        mat_3=ch1_padded[h-1:h+1,w-1:w+1]
-        if np.sum(mat_3)>1:
+        mat_3=np.array(ch1_padded[h-1:h+1,w-1:w+1])
+        if np.sum(mat_3)<8*255:
+            np.argwhere(mat_3 == 0)
+
             
 
 
