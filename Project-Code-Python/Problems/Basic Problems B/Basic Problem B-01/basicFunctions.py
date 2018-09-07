@@ -30,7 +30,10 @@ ch1_padded = np.pad(ch1,((0,w_pad),(0,h_pad)),'constant',constant_values = (0,25
 w_range = range(width+w_pad)
 h_range = range(height+h_pad)
 for w in w_range[2::2]:
-    
+    for h in h_range[2::2]:
+        mat_3=ch1_padded[h-1:h+1,w-1:w+1]
+        if np.sum(mat_3)>1:
+            
 
 
 #pix.shape
