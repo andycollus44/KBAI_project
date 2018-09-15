@@ -43,23 +43,30 @@ class Agent:
             score1 = {}
             score2 = {}
             avg_score = {}
-            im_trans_1 = 10000  # initialize bigger value of for mse comparison
-            im_trans_2 = 10000
-            for key in imgX.items():
+            im_trans_1 = 100000  # initialize bigger value of for mse comparison
+            im_trans_2 = 100000
+            for key,value in imgX.items():
                 for angel in angel_set:
                     for trans in transpose_set:
                         im = Image.fromarray(img['A'])  # im is an image, img is an array
 
                         im.transpose(trans).rotate(angel)
-                        tmp1 = np.add(np.substract(img['C'], np.array(im)), img['B'])  # C-A+B
-                        im_trans_1 = min(tmp1, im_trans_1)
-                        tmp2 = np.add(np.substract(img['B'], np.array(im)), img['C'])  # B-A+C
-                        im_trans_2 = min(tmp2, im_trans_2)
-                score1[key] = mse(imgX[key], im_trans_1)
-                score2[key] = mse(imgX[key], im_trans_2)
-            for key, value in score1:
+                        tmp1 = np.add(np.subtract(img['C'], np.array(im)), img['B'])  # C-A+B
+                        im_trans_1 = np.minimum(mse(tmp1,imgX[key]), im_trans_1)            #       smallest mse
+                        tmp2 = np.add(np.subtract(img['B'], np.array(im)), img['C'])  # B-A+C
+                        im_trans_2 = np.minimum(mse(tmp2,imgX[key]), im_trans_2)
+                score1[key] = im_trans_1
+                score2[key] = im_trans_2
+            ans = 0
+            for key, value in score1.items():
                 avg_score[key] = float((score1[key] + score2[key]) / 2)
-            return max(avg_score, key=avg_score.get)
+
+                try:
+                    ans = min(avg_score, key=avg_score.get)
+                except ValueError:
+                    print(avg_score)
+
+            return ans
 
         def mse(imageA, imageB):
             # the 'Mean Squared Error' between the two images is the
@@ -76,11 +83,12 @@ class Agent:
 
         for key, value in problem.figures.items():
             if problem.problemSetName[-1] == 'B':
-                if key.isalpha == True:
+                if key.isalpha() == True:
                     img[key] = np.array(Image.open(value.visualFilename))
-                elif key.isdigit ==True:
+                # else key.isdigit() ==True:
+                else:
                     imgX[key] = np.array(Image.open(value.visualFilename))
 
-                answer = test_transform(imgX, img, angel_set, transpose_set)
+        answer = test_transform(imgX, img, angel_set, transpose_set)
 
-        return answer
+        return int(answer)
