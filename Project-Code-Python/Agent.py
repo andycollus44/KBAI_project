@@ -44,22 +44,36 @@ class Agent:
             score1 = {}
             score2 = {}
             avg_score = {}
-            im_trans_1 = 100000  # initialize bigger value of for mse comparison
-            im_trans_2 = 100000
-            for key,value in imgX.items():
+
+            for key, value in imgX.items():
+                t_list1 = np.multiply(np.ones(100),
+                                      500000)  # t_list to store MSE and T to get all valid transpose from B-A
+                t_list2 = np.multiply(np.ones(100), 500000)
                 for angel in angel_set:
-                    for trans in transpose_set:
+                    for i, trans in enumerate(transpose_set):
                         im = Image.fromarray(img['A'])  # im is an image, img is an array
-                        try:
+                        try:  # allow no transpose
                             im = im.transpose(trans).rotate(angel)
                         except ValueError:
                             im = im.rotate(angel)
-                        tmp1 = np.add(np.subtract(img['C'], np.array(im)), img['B'])  # C-A+B
-                        im_trans_1 = np.minimum(mse(tmp1,imgX[key]), im_trans_1)            #       smallest mse
-                        tmp2 = np.add(np.subtract(img['B'], np.array(im)), img['C'])  # B-A+C
-                        im_trans_2 = np.minimum(mse(tmp2,imgX[key]), im_trans_2)
-                score1[key] = im_trans_1
-                score2[key] = im_trans_2
+                        tmpTAB = np.subtract(np.array(im), img['B'])  # T(A)-B
+                        tmpTCX = np.subtract(img['C'], imgX[key])  # T(C)-X
+                        t1 = mse(tmpTAB, tmpTCX)  # the transposed image difference
+                        t_list1[i] = t1  # dic for all mse, to get minimum
+                        tmpTAC = np.subtract(np.array(im), img['C'])  # T(A)-C
+                        tmpTBX = np.subtract(img['B'], imgX[key])  # T(C)-X
+                        t2 = mse(tmpTAC, tmpTBX)
+                        t_list2[i] = t2
+                        # check points
+                        # print(key+' C-A+B '+str(im_trans_1))
+                        # Image.fromarray(tmp1).show()
+                        # pause()
+                        # print(key + ' B-A+C '+str(im_trans_2))
+                        # Image.fromarray(tmp2).show()
+                        # pause()
+                score1[key] = min(t_list1)
+                score2[key] = min(t_list2)
+
             ans = 0
             for key, value in score1.items():
                 avg_score[key] = float((score1[key] + score2[key]) / 2)
@@ -68,8 +82,8 @@ class Agent:
                     ans = min(avg_score, key=avg_score.get)
                 except ValueError:
                     print(avg_score)
-            for key,value in avg_score.items():
-                print(key+' '+str(value))
+            for key, value in avg_score.items():
+                print(key + ' ' + str(value))
             return ans
 
         def mse(imageA, imageB):
