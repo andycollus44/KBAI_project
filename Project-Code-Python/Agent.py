@@ -36,8 +36,9 @@ class Agent:
         import numpy as np
         img = {}  # clues
         imgX = {}  # solutions
-        angel_set = np.array([0, 30, 45, 60, 90])  # remember to fill the background as white.
-        transpose_set = [Image.FLIP_LEFT_RIGHT, Image.FLIP_TOP_BOTTOM, Image.TRANSPOSE]
+        # angel_set = np.array([0, 30, 45, 60, 90])  # remember to fill the background as white.
+        angel_set = np.array([0])
+        transpose_set = [-1,Image.FLIP_LEFT_RIGHT, Image.FLIP_TOP_BOTTOM, Image.TRANSPOSE,Image.ROTATE_90, Image.ROTATE_180,Image.ROTATE_270]
 
         def test_transform(imgX, img, angel_set, transpose_set):  # imgX dic of
             score1 = {}
@@ -49,8 +50,10 @@ class Agent:
                 for angel in angel_set:
                     for trans in transpose_set:
                         im = Image.fromarray(img['A'])  # im is an image, img is an array
-
-                        im.transpose(trans).rotate(angel)
+                        try:
+                            im.transpose(trans).rotate(angel)
+                        except ValueError:
+                            im.rotate(angel)
                         tmp1 = np.add(np.subtract(img['C'], np.array(im)), img['B'])  # C-A+B
                         im_trans_1 = np.minimum(mse(tmp1,imgX[key]), im_trans_1)            #       smallest mse
                         tmp2 = np.add(np.subtract(img['B'], np.array(im)), img['C'])  # B-A+C
@@ -65,7 +68,8 @@ class Agent:
                     ans = min(avg_score, key=avg_score.get)
                 except ValueError:
                     print(avg_score)
-
+            for key,value in avg_score.items():
+                print(key+' '+str(value))
             return ans
 
         def mse(imageA, imageB):
@@ -80,7 +84,7 @@ class Agent:
             return err
 
 
-
+        # construct dictionary for images.
         for key, value in problem.figures.items():
             if problem.problemSetName[-1] == 'B':
                 if key.isalpha() == True:
