@@ -5,8 +5,9 @@ import numpy as np
 import os, glob
 import time
 
-home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems B/Basic Problem B-05/'
+#home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
+home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
+problemset = 'Basic Problems B/Basic Problem B-04/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
@@ -15,8 +16,8 @@ imgX = {}
 
 def img_threshold(img, thres):      # better for subtraction
     img_tmp = np.array(img)
-    img_tmp[img > thres] = 1  # white to 1
-    img_tmp[img <= thres] = 2  # black to 2
+    img_tmp[img > thres] = 2  # white to 1
+    img_tmp[img <= thres] = 1  # black to 2
     return img_tmp
 
 for filename in glob.glob('*.png'):
@@ -53,12 +54,12 @@ def test_transform(imgX, img, angel_set, transpose_set):  # imgX dic of
                 except ValueError:
                     im = im.rotate(angel)
 
-                tmpTAB = np.subtract(np.array(im), img['B'])  # T(A)-B
-                tmpTCX = np.subtract(img['C'], imgX[key])  # T(C)-X
+                tmpTAB = np.subtract(np.array(im,dtype='int8'), np.array(img['B'],dtype='int8'))  # T(A)-B
+                tmpTCX = np.subtract(np.array(img['C'],dtype='int8'), np.array(imgX[key],dtype='int8'))  # T(C)-X
                 t1 = mse(tmpTAB, tmpTCX)  # the transposed image difference
                 t_list1.append(t1)  # dic for all mse of differences, to get minimum
-                tmpTAC = np.subtract(np.array(im), img['C'])  # T(A)-C
-                tmpTBX = np.subtract(img['B'], imgX[key])  # T(C)-X
+                tmpTAC = np.subtract(np.array(im,dtype='int8'), np.array(img['C'],dtype='int8'))  # T(A)-C
+                tmpTBX = np.subtract(np.array(img['B'],dtype='int8'), np.array(imgX[key],dtype='int8'))  # T(C)-X
                 t2 = mse(tmpTAC, tmpTBX)
                 t_list2.append(t2)
                 # check points
