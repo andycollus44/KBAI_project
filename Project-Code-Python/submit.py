@@ -21,7 +21,7 @@ def main():
   app_data_dir = os.path.abspath(".bonnie")
 
   files = args.files
-  agent_file = 'Agent_v01.py'
+  agent_file = 'Agent.py'
   language_file = 'language.txt'
   if agent_file not in files:
     files.append(agent_file)
