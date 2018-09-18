@@ -7,7 +7,7 @@ import time
 
 #home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
 home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems B/Basic Problem B-04/'
+problemset = 'Basic Problems B/Basic Problem B-01/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
@@ -56,7 +56,7 @@ def get_mse_transform(imgA, imgB, angel_set, transpose_set):     #transform 2 ar
 
 def get_least_index(trans_array,threshold):
     ind = np.where(trans_array <=threshold)     #return all the values!
-    return (ind[0][0],ind[1][0])
+    return ind
 
 def perform_transform(img,ind_tuple,angel_set,transpose_set):       #return an Image
     im = Image.fromarray(img)  # im is an image, img is an array
@@ -72,15 +72,15 @@ def perform_transform(img,ind_tuple,angel_set,transpose_set):       #return an I
 # perform_transform(img['C'],ind,angel_set,transpose_set).show()
 
 
-def test_transform_X(imgX, T_img):  # imgX dic of X.png,
+def test_transform_X(imgX, T_img):  # imgX dic of X.png, return the answer by comparing the TC and X
     score = {}
+    ans = 0
     for key, value in imgX.items():
         score[key] = mse(np.array(T_img), np.array(imgX[key]))
-        ans = 0
-        try:
-            ans = min(score, key=score.get)
-        except ValueError:
-            print(score)
+    try:
+        ans = min(score, key=score.get)
+    except ValueError:
+        print(score)
     for key, value in score.items():
         print(key + ' ' + str(value))
     return ans
@@ -107,16 +107,23 @@ threshold = 200
 
 t_ac = get_mse_transform(imgA, imgC, angel_set, transpose_set)
 ind_ac = get_least_index(t_ac,threshold)
-Tac_b_img = perform_transform(img['B'],ind_ac,angel_set,transpose_set)
-answer2 = test_transform_X(imgX, Tac_b_img)
+answer2 = []
+for i,j in enumerate(ind_ac[0]):  # the np.where sucks
+    trans_ind = (ind_ac[0][i],ind_ac[1][i])
+    Tac_b_img = perform_transform(img['B'],trans_ind,angel_set,transpose_set)
+    answer2.append(test_transform_X(imgX, Tac_b_img))
 print(answer2)
 
 t_ab = get_mse_transform(imgA, imgB, angel_set, transpose_set)
 ind_ab = get_least_index(t_ab,threshold)
-Tab_c_img = perform_transform(img['C'],ind_ab,angel_set,transpose_set)
-answer1 = test_transform_X(imgX, Tab_c_img)
+answer1 = []
+for i,j in enumerate(ind_ab[0]):
+    trans_ind = (ind_ab[0][i], ind_ab[1][i])
+    Tab_c_img = perform_transform(img['C'],trans_ind,angel_set,transpose_set)
+    answer1.append(test_transform_X(imgX, Tab_c_img))
 print(answer1)
 
-
+ans = set(answer1).intersection(answer2)
+print(ans)
 
 
