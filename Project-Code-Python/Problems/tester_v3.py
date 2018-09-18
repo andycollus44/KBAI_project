@@ -7,7 +7,7 @@ import time
 
 #home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
 home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems B/Basic Problem B-01/'
+problemset = 'Basic Problems B/Basic Problem B-05/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
@@ -54,8 +54,12 @@ def get_mse_transform(imgA, imgB, angel_set, transpose_set):     #transform 2 ar
 
     return trans_array
 
-def get_least_index(trans_array,threshold):
+def get_similar_index(trans_array,threshold):
     ind = np.where(trans_array <=threshold)     #return all the values!
+    return ind
+
+def get_least_index(trans_array):
+    ind = np.where(trans_array == trans_array.min())
     return ind
 
 def perform_transform(img,ind_tuple,angel_set,transpose_set):       #return an Image
@@ -103,10 +107,12 @@ def main():
 imgA = np.array(img['A'])
 imgB = np.array(img['B'])
 imgC = np.array(img['C'])
-threshold = 200
+threshold = 500
 
 t_ac = get_mse_transform(imgA, imgC, angel_set, transpose_set)
-ind_ac = get_least_index(t_ac,threshold)
+ind_ac = get_similar_index(t_ac,threshold)
+# if len(ind_ac[0])==0:
+#     ind_ac = get_least_index(t_ac)
 answer2 = []
 for i,j in enumerate(ind_ac[0]):  # the np.where sucks
     trans_ind = (ind_ac[0][i],ind_ac[1][i])
@@ -115,7 +121,9 @@ for i,j in enumerate(ind_ac[0]):  # the np.where sucks
 print(answer2)
 
 t_ab = get_mse_transform(imgA, imgB, angel_set, transpose_set)
-ind_ab = get_least_index(t_ab,threshold)
+ind_ab = get_similar_index(t_ab,threshold)
+# if len(ind_ab[0])==0:
+#     ind_ab = get_least_index(t_ab)
 answer1 = []
 for i,j in enumerate(ind_ab[0]):
     trans_ind = (ind_ab[0][i], ind_ab[1][i])
