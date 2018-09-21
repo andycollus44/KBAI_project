@@ -109,7 +109,7 @@ imgB = np.array(img['B'])
 imgC = np.array(img['C'])
 threshold = 500
 
-t_ac = get_mse_transform(imgA, imgC, angel_set, transpose_set)
+t_ac = get_mse_transform(imgA, imgC, angel_set, transpose_set)      # T(C)
 ind_ac = get_similar_index(t_ac,threshold)
 # if len(ind_ac[0])==0:
 #     ind_ac = get_least_index(t_ac)
@@ -132,6 +132,39 @@ for i,j in enumerate(ind_ab[0]):
 print(answer1)
 
 ans = set(answer1).intersection(answer2)
+
+# Next step B-T(A)
+
+
+
+def get_diff_transform(imgA, imgB, angel_set, transpose_set):     #transform 2 arrays and find mse follow the transform
+    diff_array = [] # store the  tmpTABs
+    for i,angel in enumerate(angel_set):
+        for j,trans in enumerate(transpose_set):
+            im = Image.fromarray(imgA)  # im is an image, img is an array
+            try:  # allow no transpose
+                im = im.transpose(trans).rotate(angel)
+            except ValueError:
+                im = im.rotate(angel)
+
+            diffTAB = np.subtract(np.array(im), np.array(imgB))  # T(A)-B
+            diff_array.append(np.sum(np.abs(diffTAB)))          #return an array of difference with index of transformation code
+
+    return diff_array
+
+
+if len(ans)==0:     # if simple transformation didn't get a result.
+    diff_ab = get_diff_transform(imgA, imgC, angel_set, transpose_set) # an array is returned.
+    least_diff_ab = np.argmin(diff_ab)
+    ans = []
+    for key,value in imgX.items():
+        diff_cx = get_diff_transform(imgA, value, angel_set, transpose_set)
+        least_diff_cx = np.argmin(diff_cx)
+        if least_diff_ab == least_diff_cx:
+            ans.append(key)
+
 print(ans)
+
+
 
 

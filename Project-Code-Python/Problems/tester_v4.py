@@ -4,9 +4,9 @@ import numpy as np
 import os, glob
 import time
 
-home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
-# home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems B/Basic Problem B-08/'
+# home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
+home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
+problemset = 'Basic Problems B/Basic Problem B-09/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
@@ -126,3 +126,43 @@ else:
         trans_ac.append(an)      # eat up images
 
 print(trans_ac)
+
+# Rule 3 fill a ring shape. A-B or B-A
+
+def get_change_point(row,threshold):
+    thres_row = row.copy()
+    thres_row[row> threshold] = 1
+    thres_row[row<=threshold] = 0
+    change_point = {0:row[0]}
+    for index,pixel in enumerate(row[0:-2]):
+        if pixel != row[index+1]:
+            change_point[index+1] = row[index+1]
+    return change_point                 # return a dic of changed points.
+
+def squeeze_row(row,threshold): # 00100100 to 01010, eat up a row of np.array
+    thres_row = row.copy()
+    thres_row[row> threshold] = 1
+    thres_row[row<=threshold] = 0
+    squeeze_row = [thres_row[0]]
+    ind = [0]
+    for index,pixel in enumerate(row[0:-2]):
+        if pixel != thres_row[index+1]:
+            squeeze_row.append(thres_row[index+1])
+            ind.append(index+1)
+    return (ind,squeeze_row)
+
+def fill_shape()：           # fill single shape
+
+im = img['A']
+im_array = np.array(im)
+# filled_array =
+for i,row in enumerate(im_array):
+#     ind_dic = get_change_point(row[:, 0], 128)
+
+    sq_row = squeeze_row(row[:,0],128)[1]        # find number of 0 to determine the layers.
+    sq_ind = squeeze_row(row[:,0],128)[0]
+    if len(sq_ind)>3:
+        fill_seg_ind = np.array(sq_ind)[np.array(sq_row)==0]    #find black boundary
+        # fill_seg_ind = [i for i,ind in enumerate(sq_row) if ind==0]
+        row[fill_seg_ind[0]:fill_seg_ind[1],:]= 0            # fill space between the boundary to black
+        im_array[i]=row
