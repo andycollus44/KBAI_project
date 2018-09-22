@@ -59,7 +59,6 @@ class Agent:
                 # else key.isdigit() ==True:
                 else:
                     imgX[key] = Image.open(value.visualFilename)
-            else: exit()                                                    # only test problem set B.
 
         def self_symmetric(img, threshold):  # eat up a image object.
             ans = False
@@ -146,7 +145,7 @@ class Agent:
             for i, row in enumerate(im_array):
                 #     ind_dic = get_change_point(row[:, 0], 128)
 
-                sq_row = squeeze_row(row[:, 0], threshold)[1]  # find number of 0s to determine the layers.
+                sq_row = squeeze_row(row[:, 0], threshold)[1]  # find number of 0 to determine the layers.
                 sq_ind = squeeze_row(row[:, 0], threshold)[0]
                 if len(sq_ind) > 3:
                     fill_seg_ind = np.array(sq_ind)[np.array(sq_row) == 0]  # find black boundary
@@ -188,12 +187,6 @@ class Agent:
 
             return answer
 
-        def transpose_img_set(img_set,trans_code):          # transpose the whole problem set.
-            t_img_set = {}
-            for key,value in img_set.items():
-                t_img_set[key] = value.transpose(trans_code)
-            return t_img_set
-
         def transform_compare(img, imgX, threshold):
 
             t_ac = get_mse_transform(np.array(img['A']), np.array(img['C']), angel_set,
@@ -221,44 +214,19 @@ class Agent:
                     return trans_ab[0]
                 else: return 0
 
-        def img_threshold(img, thres):  # better for subtraction
-            img = np.array(img)
-            img_tmp = img.copy()
-            img_tmp[img > thres] = 10  # white to 1
-            img_tmp[img <= thres] = 3  # black to 2
-            return img_tmp
 
-        def img_subtract(imgA, imgB):  #
-            diff = np.subtract(np.array(imgA, dtype='int8'), np.array(imgB, dtype='int8'))
-            return diff
-
-        def diff_compare(img,imgX):
-            # B-A = X-C
-            score = []
-            ind = []
-            for key,value in imgX.items():
-                BsubA = img_subtract(img_threshold(img['B'], 128), img_threshold(img['A'], 128))
-                XsubC = img_subtract(img_threshold(imgX[key], 128), img_threshold(img['C'], 128))
-                score.append(mse(BsubA, XsubC))
-                ind.append(key)
-            return ind[np.argmin(score)]                # return the smallest difference
-
-        # Start testing here!
         answer = 0
         # Rule 1: The combined figure is symmetric to itself.
         for key,value in imgX.items():
-            if self_symmetric(combine_figures(img, imgX[key]),2000)==True:      # the threshold should be < 3000
+            if self_symmetric(combine_figures(img, imgX[key]),3000)==True:
                 answer = key
 
-        if answer == 0:
-            # Rule 2: fill a shape and compare
-            answer = fill_compare(img,imgX,3000)
-            if answer ==0:
-                answer = fill_compare(transpose_img_set(img,Image.FLIP_TOP_BOTTOM),transpose_img_set(imgX,Image.FLIP_TOP_BOTTOM),3000)
-        if answer ==0:
-            #Rule 3: transform and compare
-            answer = transform_compare(img,imgX,2000)
-        if answer ==0:
-            #Rule 4: subtract and compare
-            answer = diff_compare(img,imgX)
+            if answer == 0:
+                # Rule 2: fill a shape and compare
+                answer = fill_compare(img,imgX,3000)
+
+                if answer ==0:
+                    #Rule 3: transform and compare
+                    answer = transform_compare(img,imgX,2000)
+
         return int(answer)
