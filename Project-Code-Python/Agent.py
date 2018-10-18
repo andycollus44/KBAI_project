@@ -59,7 +59,7 @@ class Agent:
                 # else key.isdigit() ==True:
                 else:
                     imgX[key] = Image.open(value.visualFilename)
-            else: exit()                                                    # only test problem set B.
+            else: continue                                                  # only test problem set B.
 
         def self_symmetric(img, threshold):  # eat up a image object.
             ans = False

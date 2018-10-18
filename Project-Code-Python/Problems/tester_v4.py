@@ -6,7 +6,7 @@ import time
 
 # home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
 home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems B/Basic Problem B-11/'
+problemset = 'Basic Problems B/Basic Problem B-07/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
