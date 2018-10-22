@@ -1,11 +1,12 @@
 from PIL import Image
+from PIL import ImageFilter
 import numpy as np
 import os, glob
 import time
 
-home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
-# home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems C/Basic Problem C-01/'
+# home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
+home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
+problemset = 'Basic Problems C/Basic Problem C-07/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
@@ -33,8 +34,10 @@ def mse(imageA, imageB):        # eat up 2 arrays.
     # the 'Mean Squared Error' between the two images is the
     # sum of the squared difference between the two images;
     # NOTE: the two images must have the same dimension
-    err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
-    err /= float(imageA.shape[0] * imageA.shape[1])
+    imgarrayA = np.array(imageA.filter(ImageFilter.BLUR))
+    imgarrayB = np.array(imageB.filter(ImageFilter.BLUR))
+    err = np.sum((imgarrayA.astype("float") - imgarrayB.astype("float")) ** 2)
+    err /= float(imgarrayA.shape[0] * imgarrayA.shape[1])
 
     # return the MSE, the lower the error, the more "similar"
     # the two images are
@@ -44,7 +47,7 @@ def self_symmetric (img,threshold):   # eat up a image object.
     ans = 0
     symmetry_set = [Image.FLIP_LEFT_RIGHT, Image.FLIP_TOP_BOTTOM]
     for trans in symmetry_set:
-        if mse(np.array(img),np.array(img.transpose(trans)))<threshold:
+        if mse(img,img.transpose(trans))<threshold:
             ans = 1
             break
     return ans
@@ -63,6 +66,7 @@ def combine_figures(img_dic,imgX):      # update for 3x3 problem
     combined_img.paste(imgX, (2*w, 2*h))
     return combined_img
 
-c = combine_figures(img,imgX['3'])
+c = combine_figures(img,imgX['2'])
 
-ans = self_symmetric(c,3000)
+ans = self_symmetric(c,1000)
+print(ans)

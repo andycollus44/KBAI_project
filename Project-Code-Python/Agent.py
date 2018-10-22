@@ -33,6 +33,7 @@ class Agent:
     # Returning your answer as a string may cause your program to crash.
     def Solve(self, problem):
         from PIL import Image
+        from PIL import ImageFilter
         import numpy as np
         img = {}  # clues
         imgX = {}  # solutions
@@ -40,12 +41,14 @@ class Agent:
         angel_set = np.array([0])
         transpose_set = [-1,Image.FLIP_LEFT_RIGHT, Image.FLIP_TOP_BOTTOM, Image.TRANSPOSE,Image.ROTATE_90, Image.ROTATE_180,Image.ROTATE_270]
 
-        def mse(imageA, imageB):
+        def mse(imageA, imageB):  # eat up 2 arrays.
             # the 'Mean Squared Error' between the two images is the
             # sum of the squared difference between the two images;
             # NOTE: the two images must have the same dimension
-            err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
-            err /= float(imageA.shape[0] * imageA.shape[1])
+            imgarrayA = np.array(imageA.filter(ImageFilter.BLUR))
+            imgarrayB = np.array(imageB.filter(ImageFilter.BLUR))
+            err = np.sum((imgarrayA.astype("float") - imgarrayB.astype("float")) ** 2)
+            err /= float(imgarrayA.shape[0] * imgarrayA.shape[1])
 
             # return the MSE, the lower the error, the more "similar"
             # the two images are
@@ -62,11 +65,11 @@ class Agent:
             else: continue                                                  # only test problem set B.
 
         def self_symmetric(img, threshold):  # eat up a image object.
-            ans = False
+            ans = 0
             symmetry_set = [Image.FLIP_LEFT_RIGHT, Image.FLIP_TOP_BOTTOM]
             for trans in symmetry_set:
-                if mse(np.array(img), np.array(img.transpose(trans))) < threshold:  # if it's symmetric to itself
-                    ans = True
+                if mse(img, img.transpose(trans)) < threshold:
+                    ans = 1
                     break
             return ans
 
@@ -91,7 +94,7 @@ class Agent:
         answer = 0
         # Rule 1: The combined figure is symmetric to itself.
         for key,value in imgX.items():
-            if self_symmetric(combine_figures(img, imgX[key]),3000)==True:      # the threshold should be < 3000
+            if self_symmetric(combine_figures(img, imgX[key]),1000)==True:      # the threshold should be < 3000
                 answer = key
 
 
