@@ -6,7 +6,7 @@ import time
 
 # home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
 home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems C/Basic Problem C-11/'
+problemset = 'Basic Problems C/Basic Problem C-12/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
@@ -74,12 +74,40 @@ def dark_ratio(img,thres):
     return np.sum(img_tmp)
 
 def dark_center(img,thres):
-    # add the coordinations and average.
-    return 0
+    # add the rows and average them.
+    imgarray = np.array(img)
+    img_tmp = imgarray.copy()
+    img_tmp[imgarray > thres] = 0  # white to 0
+    img_tmp[imgarray <= thres] = 1  # black to 1
+    rows = np.sum(np.sum((img_tmp), axis=0),axis = 1)
+    cols = np.sum(np.sum((img_tmp), axis=1),axis = 1)
+    return (weighted_center(rows),weighted_center(cols))
+
+def weighted_center(row_array):      # pass a list
+    sum = 0
+    row_list = list(row_array)
+    for i in range(len(row_list)):
+        sum = sum+ row_list[i]*(i+1)
+    return sum/np.sum(row_list)
+
+def figure_sum(img_dict):
+    w, h = img_dict['A'].size
+    sum_img = np.zeros((w,h,4))
+    for key,value in img_dict.items():
+        sum_img = sum_img + np.array(value)
+    return sum_img
+
+# dark_center(img['B'],128)
 
 dark_list = []
+dark_center_list = []
 for key,value in img.items():
     dark_list.append(dark_ratio(value,128))
+    dark_center_list.append(dark_center(value,128))
 
-print(dark_list)
-print(dark_ratio(imgX['4'],128))
+
+# print(dark_list)
+# print(dark_ratio(imgX['8'],128))
+
+print(dark_center_list)
+print(dark_center(imgX['8'],128))
