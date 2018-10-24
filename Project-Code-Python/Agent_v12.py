@@ -41,7 +41,7 @@ class Agent:
         angel_set = np.array([0])
         transpose_set = [-1,Image.FLIP_LEFT_RIGHT, Image.FLIP_TOP_BOTTOM, Image.TRANSPOSE,Image.ROTATE_90, Image.ROTATE_180,Image.ROTATE_270]
 
-        def mse(imageA, imageB):  # eat up 2 arrays. Blurred version
+        def mse(imageA, imageB):  # eat up 2 arrays.
             # the 'Mean Squared Error' between the two images is the
             # sum of the squared difference between the two images;
             # NOTE: the two images must have the same dimension
@@ -118,7 +118,7 @@ class Agent:
                 sum_img = sum_img + np.array(value)
             return sum_img
 
-        def calc_diff(list, value):
+        def calc_diff(list, value):         # difference between expected value and imgX values
             list = np.array(list)
             value = np.array(value)
             exp1 = 2 * list[5] - list[2]
@@ -129,12 +129,8 @@ class Agent:
         def test_dark_ratio(img,imgX,thres):
             dark_list = []
             dark_center_list = []
-            # # keys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-            # keys = img.keys()
-            # for k in sorted(img.iterkeys()):
-            #     dark_list.append(dark_ratio(img[k], thres))             # put dark ratio values into a list
-            #     dark_center_list.append(dark_center(img[k], thres))
-            for key,value in sorted(img.items()):
+            keys = ['A','B','C','D','E','F','G','H']
+            for key in keys:
                 dark_list.append(dark_ratio(img[key], thres))             # put dark ratio values into a list
                 dark_center_list.append(dark_center(img[key], thres))
 
@@ -152,14 +148,12 @@ class Agent:
 
         # Start testing here!
         answer = 0
-
         # Rule 1: The combined figure is symmetric to itself.
         for key,value in imgX.items():
             if self_symmetric(combine_figures(img, imgX[key]),1000)==True:      # the threshold should be < 3000
                 answer = key
         # Rule 2: The dark ratio method.
-        if answer ==0:
-
+        if answer == 0:
             answer = test_dark_ratio(img, imgX, 128)
 
         return int(answer)

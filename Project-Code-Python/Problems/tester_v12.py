@@ -4,8 +4,8 @@ import numpy as np
 import os, glob
 import time
 
-home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
-# home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
+# home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
+home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
 problemset = 'Basic Problems C/Basic Problem C-11/'
 os.chdir(home + 'Problems/' + problemset)
 
@@ -109,10 +109,10 @@ def calc_diff(list,value):
 
 dark_list = []
 dark_center_list = []
-for key,value in img.items():
-    dark_list.append(dark_ratio(value,128))
-    dark_center_list.append(dark_center(value,128))
-
+keys = ['A','B','C','D','E','F','G','H']
+for key in keys:
+    dark_list.append(dark_ratio(img[key], 128))             # put dark ratio values into a list
+    dark_center_list.append(dark_center(img[key], 128))
 min_diff = 10000000000
 ans = 0
 for key,value in imgX.items():
