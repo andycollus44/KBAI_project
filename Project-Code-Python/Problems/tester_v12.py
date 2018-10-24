@@ -4,9 +4,9 @@ import numpy as np
 import os, glob
 import time
 
-# home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
-home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems C/Basic Problem C-12/'
+home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
+# home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
+problemset = 'Basic Problems C/Basic Problem C-11/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
@@ -97,6 +97,14 @@ def figure_sum(img_dict):
         sum_img = sum_img + np.array(value)
     return sum_img
 
+def calc_diff(list,value):
+    list = np.array(list)
+    value = np.array(value)
+    exp1 = 2*list[5]-list[2]
+    exp2 = 2*list[7]-list[6]
+    exp3 = 2*list[4]-list[0]
+    return (value-exp1)**2+(value-exp2)**2+(value-exp3)**2
+
 # dark_center(img['B'],128)
 
 dark_list = []
@@ -105,9 +113,18 @@ for key,value in img.items():
     dark_list.append(dark_ratio(value,128))
     dark_center_list.append(dark_center(value,128))
 
+min_diff = 10000000000
+ans = 0
+for key,value in imgX.items():
+
+    diff = calc_diff(dark_list, dark_ratio(value, 128))
+    if type(diff)==type((1,1)):
+        diff = np.sum(diff)
+    if diff<min_diff:
+        min_diff = diff
+        ans = int(key)
 
 # print(dark_list)
 # print(dark_ratio(imgX['8'],128))
 
-print(dark_center_list)
-print(dark_center(imgX['8'],128))
+print(ans)
