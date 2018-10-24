@@ -97,5 +97,7 @@ class Agent:
             if self_symmetric(combine_figures(img, imgX[key]),1000)==True:      # the threshold should be < 3000
                 answer = key
 
+        if answer =0:
+
 
         return int(answer)
