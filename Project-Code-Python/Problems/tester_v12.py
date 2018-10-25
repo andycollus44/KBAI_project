@@ -4,9 +4,9 @@ import numpy as np
 import os, glob
 import time
 
-# home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
-home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems C/Basic Problem C-11/'
+home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
+# home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
+problemset = 'Basic Problems C/Basic Problem C-09/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
@@ -105,6 +105,13 @@ def calc_diff(list,value):
     exp3 = 2*list[4]-list[0]
     return (value-exp1)**2+(value-exp2)**2+(value-exp3)**2
 
+
+def check_dark_increase(list, incre_factor):  # check if there's an increment in dark_ratio
+
+    if np.abs(int(list[1]) - int(list[0])) < incre_factor * int(list[0]):
+        return False
+    else:
+        return True
 # dark_center(img['B'],128)
 
 dark_list = []
@@ -113,18 +120,57 @@ keys = ['A','B','C','D','E','F','G','H']
 for key in keys:
     dark_list.append(dark_ratio(img[key], 128))             # put dark ratio values into a list
     dark_center_list.append(dark_center(img[key], 128))
-min_diff = 10000000000
-ans = 0
-for key,value in imgX.items():
 
-    diff = calc_diff(dark_list, dark_ratio(value, 128))
-    if type(diff)==type((1,1)):
-        diff = np.sum(diff)
-    if diff<min_diff:
-        min_diff = diff
-        ans = int(key)
 
+# print(dark_list)
+def test_dark_ratio(img, imgX, thres):
+    dark_list = []
+    dark_center_list = []
+    # # keys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+    # keys = img.keys()
+    # for k in sorted(img.iterkeys()):
+    #     dark_list.append(dark_ratio(img[k], thres))             # put dark ratio values into a list
+    #     dark_center_list.append(dark_center(img[k], thres))
+    for key, value in sorted(img.items()):
+        dark_list.append(dark_ratio(img[key], thres))  # put dark ratio values into a list
+        dark_center_list.append(dark_center(img[key], thres))
+
+    if len(dark_list) == 0:
+        print('empty dark list')
+    elif check_dark_increase(dark_list, 0.1) == False:
+        return 0
+
+    min_diff = 10000000000
+    ans = 0
+    for key, value in imgX.items():
+
+        diff = calc_diff(dark_list, dark_ratio(value, thres))
+        if type(diff) == type((1, 1)):
+            diff = np.sum(diff)
+        if diff < min_diff:
+            min_diff = diff
+            ans = int(key)
+    return ans
+
+
+def test_horiz_switch(img, imgX, thres):
+    for key, value in imgX.items():
+        if mse(horiz_switch(value), img['G']) < thres:
+            return key
+
+def horiz_switch(img):
+
+    imgarray = np.array(img)
+    w, h, c = imgarray.shape
+    img_tmp = imgarray.copy()
+    img_tmp[:,0:int(h/2-1),:] = imgarray[:,int(h/2):-1,:]
+    img_tmp[:, int(h / 2):-1 :] = imgarray[:,0:int(h/2)-1,:]
+
+    return Image.fromarray(img_tmp)
 # print(dark_list)
 # print(dark_ratio(imgX['8'],128))
 
-print(ans)
+answer = test_dark_ratio(img, imgX, 128)
+if answer == 0:
+    answer = test_horiz_switch(img, imgX, 2000)
+    print(answer)

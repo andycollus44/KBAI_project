@@ -126,6 +126,12 @@ class Agent:
             exp3 = 2 * list[4] - list[0]
             return (value - exp1) ** 2 + (value - exp2) ** 2 + (value - exp3) ** 2
 
+        def check_dark_increase(list,incre_factor):      # check if there's an increment in dark_ratio
+            if np.abs(int(list[1]) - int(list[0])) < incre_factor * int(list[0]):
+                return False
+            else:
+                return True
+
         def test_dark_ratio(img,imgX,thres):
             dark_list = []
             dark_center_list = []
@@ -137,6 +143,11 @@ class Agent:
             for key,value in sorted(img.items()):
                 dark_list.append(dark_ratio(img[key], thres))             # put dark ratio values into a list
                 dark_center_list.append(dark_center(img[key], thres))
+
+            if len(dark_list) == 0:
+                print('empty dark list')
+            elif check_dark_increase(dark_list,0.1)==False:
+                return 0
 
             min_diff = 10000000000
             ans = 0
@@ -150,6 +161,24 @@ class Agent:
                     ans = int(key)
             return ans
 
+        def test_horiz_switch(img,imgX,thres):
+            ans = 0
+            for key, value in imgX.items():
+                if mse(horiz_switch(value),img['G'])<thres:
+                    ans = key
+            return ans
+
+
+        def horiz_switch(img):
+
+            imgarray = np.array(img)
+            w, h, c = imgarray.shape
+            img_tmp = imgarray.copy()
+            img_tmp[:, 0:int(h / 2 - 1), :] = imgarray[:, int(h / 2):-1, :]
+            img_tmp[:, int(h / 2):-1:] = imgarray[:, 0:int(h / 2) - 1, :]
+
+            return Image.fromarray(img_tmp)
+
         # Start testing here!
         answer = 0
 
@@ -158,8 +187,13 @@ class Agent:
             if self_symmetric(combine_figures(img, imgX[key]),1000)==True:      # the threshold should be < 3000
                 answer = key
         # Rule 2: The dark ratio method.
+
         if answer ==0:
 
             answer = test_dark_ratio(img, imgX, 128)
+
+        # if answer == 0:
+        #     answer = test_horiz_switch(img,imgX,2000)
+
 
         return int(answer)
