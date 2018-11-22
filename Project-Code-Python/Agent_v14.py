@@ -56,7 +56,7 @@ class Agent:
 
         # construct dictionary for images.
         for key, value in problem.figures.items():
-            if problem.problemSetName[-1] == 'D' or problem.problemSetName[-1] == 'E' or problem.problemSetName[-1] == 'C':
+            if problem.problemSetName[-1] == 'C':
                 if key.isalpha() == True:
                     img[key] = Image.open(value.visualFilename)
                 # else key.isdigit() ==True:
@@ -132,7 +132,7 @@ class Agent:
             else:
                 return True
 
-        def test_dark_ratio(img, imgX, thres):
+        def test_dark_ratio(img,imgX,thres):
             dark_list = []
             dark_center_list = []
             # # keys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
@@ -140,27 +140,40 @@ class Agent:
             # for k in sorted(img.iterkeys()):
             #     dark_list.append(dark_ratio(img[k], thres))             # put dark ratio values into a list
             #     dark_center_list.append(dark_center(img[k], thres))
-            for key, value in sorted(img.items()):
-                dark_list.append(dark_ratio(img[key], thres))  # put dark ratio values into a list
+            for key,value in sorted(img.items()):
+                dark_list.append(dark_ratio(img[key], thres))             # put dark ratio values into a list
                 dark_center_list.append(dark_center(img[key], thres))
 
-            # if len(dark_list) == 0:
-            #     print('empty dark list')
-            # # elif check_dark_increase(dark_list, 0.1) == False:
-            # #     return 0
-            min_center = 1000
-            min_diff = 10000000000
-            ans = 0
-            for key, value in imgX.items():
+            if len(dark_list) == 0:
+                print('empty dark list')
+                return 0
+            elif check_dark_increase(dark_list,0.1)==True:         #not increasing
+                # return 0
 
-                diff = calc_diff(dark_list, dark_ratio(value, thres))
-                center_dff = calc_diff(dark_center_list, dark_center(value, thres))
-                if type(diff) == type((1, 1)):
-                    diff = np.sum(diff)
-                if diff < min_diff:
-                    min_diff = diff
-                    ans = int(key)
-            return ans
+                min_diff = 10000000000
+
+                ans = 0
+                for key, value in imgX.items():
+
+                    diff = calc_diff(dark_list, dark_ratio(value, thres))
+
+                    if type(diff) == type((1, 1)):
+                        diff = np.sum(diff)
+                    if diff < min_diff:
+                        min_diff = diff
+                        ans = int(key)
+                return ans
+
+            elif check_dark_increase(dark_list, 0.1) == False:
+                min_center_diff = 10000
+                ans = 0
+                for key, value in imgX.items():
+                    center_diff = calc_diff(dark_center_list, dark_center(value, thres))
+                    center_diff = np.sum(center_diff)
+                    if center_diff < min_center_diff:
+                        min_center_diff = center_diff
+                        ans = int(key)
+                    return ans
 
         def test_horiz_switch(img,imgX,thres):
             ans = 0

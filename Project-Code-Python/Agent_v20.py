@@ -56,7 +56,7 @@ class Agent:
 
         # construct dictionary for images.
         for key, value in problem.figures.items():
-            if problem.problemSetName[-1] == 'D' or problem.problemSetName[-1] == 'E' or problem.problemSetName[-1] == 'C':
+            if problem.problemSetName[-1] == 'C':
                 if key.isalpha() == True:
                     img[key] = Image.open(value.visualFilename)
                 # else key.isdigit() ==True:
