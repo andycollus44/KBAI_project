@@ -41,12 +41,12 @@ class Agent:
         angel_set = np.array([0])
         transpose_set = [-1,Image.FLIP_LEFT_RIGHT, Image.FLIP_TOP_BOTTOM, Image.TRANSPOSE,Image.ROTATE_90, Image.ROTATE_180,Image.ROTATE_270]
 
-        def mse(imageA, imageB):  # eat up 2 arrays. Blurred version
+        def mse(imageA, imageB):  # eat up 2 arrays.
             # the 'Mean Squared Error' between the two images is the
             # sum of the squared difference between the two images;
             # NOTE: the two images must have the same dimension
-            imgarrayA = np.array(imageA.filter(ImageFilter.BLUR))
-            imgarrayB = np.array(imageB.filter(ImageFilter.BLUR))
+            imgarrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=10)))
+            imgarrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=10)))
             err = np.sum((imgarrayA.astype("float") - imgarrayB.astype("float")) ** 2)
             err /= float(imgarrayA.shape[0] * imgarrayA.shape[1])
 
@@ -54,15 +54,26 @@ class Agent:
             # the two images are
             return err
 
-        # construct dictionary for images.
-        for key, value in problem.figures.items():
-            if problem.problemSetName[-1] == 'D' or problem.problemSetName[-1] == 'E' or problem.problemSetName[-1] == 'C':
-                if key.isalpha() == True:
-                    img[key] = Image.open(value.visualFilename)
-                # else key.isdigit() ==True:
-                else:
-                    imgX[key] = Image.open(value.visualFilename)
-            else: continue                                                  # only test problem set B.
+        def mset(imageA, imageB, thres):  # eat up 2 arrays.
+            # the 'Mean Squared Error' between the two images is the
+            # sum of the squared difference between the two images;
+            # NOTE: the two images must have the same dimension
+            arrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=10)))
+            arrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=10)))
+            imgarrayA = arrayA.copy()
+            imgarrayB = arrayB.copy()
+            imgarrayA[arrayA > thres] = 1
+            imgarrayA[arrayA < thres] = 0
+            imgarrayB[arrayB > thres] = 1
+            imgarrayB[arrayB < thres] = 0
+            err = np.sum((imgarrayA.astype("float") - imgarrayB.astype("float")) ** 2)
+            err /= float(imgarrayA.shape[0] * imgarrayA.shape[1])
+
+            # return the MSE, the lower the error, the more "similar"
+            # the two images are
+            return err
+
+                                                        # only test problem set B.
 
         def self_symmetric(img, threshold):  # eat up a image object.
             ans = 0
@@ -180,21 +191,51 @@ class Agent:
 
             return Image.fromarray(img_tmp)
 
-        # Start testing here!
+        def rolling_similarity(img, imgX, thres):
+            answer = 0
+            if mset(img['A'], img['E'], 128) < thres and mset(img['B'], img['F'],128) < thres and mset(img['C'],
+                                                                                                 img['D'],128) < thres:
+
+                for key, value in imgX.items():
+                    if mse(value, img['E']) < thres:
+                        answer = int(key)
+            return answer
+
+
+        # construct dictionary for Set D images.
+        for key, value in problem.figures.items():
+            if problem.problemSetName[-1] == 'D' or problem.problemSetName[-1] == 'E':
+                if key.isalpha() == True:
+                    img[key] = Image.open(value.visualFilename).convert('L')
+                # else key.isdigit() ==True:
+                else:
+                    imgX[key] = Image.open(value.visualFilename).convert('L')
+            else:
+                continue
+                # Start testing here!
         answer = 0
 
-        # Rule 1: The combined figure is symmetric to itself.
-        for key,value in imgX.items():
-            if self_symmetric(combine_figures(img, imgX[key]),1000)==True:      # the threshold should be < 3000
-                answer = key
-        # Rule 2: The dark ratio method.
+        # select Set D, E:
+        # select Set D, E:
+        # select Set D, E:
+        if problem.problemSetName[-1] == 'D' or problem.problemSetName[-1] == 'E':
+            # Rule 1: The combined figure is symmetric to itself.
+            for key,value in imgX.items():
+                if self_symmetric(combine_figures(img, imgX[key]),100)==True:      # the threshold should be < 3000
+                    answer = key
+            # Rule 2: The dark ratio method.
 
-        if answer ==0:
-
-            answer = test_dark_ratio(img, imgX, 128)
-
-        # if answer == 0:
-        #     answer = test_horiz_switch(img,imgX,2000)
+            if answer == 0:
+                answer = rolling_similarity(img, imgX, 40)
+            # if answer == 0:
+            #     answer = test_horiz_switch(img,imgX,2000)
 
 
-        return int(answer)
+            return int(answer)
+
+        elif problem.problemSetName[-1] == 'E':
+
+            return 0
+
+        else:
+            return 0
