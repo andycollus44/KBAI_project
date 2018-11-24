@@ -30,6 +30,21 @@ for key, value in images.items():
         # imgX[key] = np.array(Image.open(images[key]))
         #imgX[key] = img_threshold(np.array(Image.open(images[key])), 128)
 
+def IPR(imageA,imageB,thres):
+    arrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=2)))
+    arrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=2)))
+    imgarrayA = arrayA.copy()
+    imgarrayB = arrayB.copy()
+    imgarrayA[arrayA > thres] = 1
+    imgarrayA[arrayA < thres] = 0
+    imgarrayB[arrayB > thres] = 1
+    imgarrayB[arrayB < thres] = 0
+    sum = (imgarrayA + imgarrayB)
+    both_white = np.count_nonzero(sum == 2)
+    one_dark = np.count_nonzero(sum == 1)
+    both_dark = np.count_nonzero(sum == 0)
+    return (both_dark,one_dark,both_white)
+
 def mse(imageA, imageB):        # eat up 2 arrays.
     # the 'Mean Squared Error' between the two images is the
     # sum of the squared difference between the two images;
