@@ -6,7 +6,7 @@ import time
 #
 # home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
 home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems D/Basic Problem D-06/'
+problemset = 'Basic Problems D/Basic Problem D-03/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
@@ -30,7 +30,7 @@ for key, value in images.items():
         # imgX[key] = np.array(Image.open(images[key]))
         #imgX[key] = img_threshold(np.array(Image.open(images[key])), 128)
 
-def IPR(imageA,imageB,thres):
+def IPR(imageA,imageB,thres=128):
     arrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=2)))
     arrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=2)))
     imgarrayA = arrayA.copy()
@@ -44,6 +44,16 @@ def IPR(imageA,imageB,thres):
     one_dark = np.count_nonzero(sum == 1)
     both_dark = np.count_nonzero(sum == 0)
     return (both_dark,one_dark,both_white)
+
+def IPR_ratio(imageA,imageB):
+    (both_dark, one_dark, both_white) = IPR(imageA, imageB)
+    sum = both_dark + one_dark + both_white
+    return both_dark/sum
+
+def fig_sim(imageA,imageB,alpha = 2):                                                       #threshohd!
+    (both_dark, one_dark, both_white) = IPR(imageA,imageB)
+    return both_dark/(both_dark + alpha * one_dark)
+
 
 def mse(imageA, imageB):        # eat up 2 arrays.
     # the 'Mean Squared Error' between the two images is the
@@ -130,12 +140,12 @@ def combine_figures(img_dic,imgX):      # update for 3x3 problem
     combined_img.paste(imgX, (2*w, 2*h))
     return combined_img
 
-def dark_ratio(img,thres):
+def dark_ratio(img,thres = 128):
     imgarray = np.array(img)
     img_tmp = imgarray.copy()
     img_tmp[imgarray > thres] = 0  # white to 0
     img_tmp[imgarray <= thres] = 1  # black to 1
-    return np.sum(img_tmp)
+    return np.sum(img_tmp)/(img.size[0]*img.size[1])
 
 def dark_center(img,thres):
     # add the rows and average them.
@@ -169,6 +179,17 @@ def calc_diff(list,value):          # the diff of dark list
     exp3 = 2*list[4]-list[0]
     return (value-exp1)**2+(value-exp2)**2+(value-exp3)**2
 
+def calc_sim_diff(img,img_fromX):
+    return np.abs(fig_sim(img['C'],img['F'])-fig_sim(img_fromX, img['F']))+np.abs(fig_sim(img['G'],img['H'])-fig_sim(img_fromX, img['H'])+np.abs(fig_sim(img['A'],img['E'])-fig_sim(img_fromX, img['E'])))
+
+def calc_IPR_diff(img,img_fromX):
+    return np.abs(IPR_ratio(img['C'], img['F']) - IPR_ratio(img_fromX, img['F'])) + np.abs(
+        IPR_ratio(img['G'], img['H']) - IPR_ratio(img_fromX, img['H']) + np.abs(
+            IPR_ratio(img['A'], img['E']) - IPR_ratio(img_fromX, img['E'])))
+
+
+def calc_DPR_diff(img,img_fromX):
+    return np.abs(np.abs(dark_ratio(img['C'])-dark_ratio(img['F']))-np.abs(dark_ratio(img_fromX)-dark_ratio(img['F'])))+ np.abs(np.abs(dark_ratio(img['G'])-dark_ratio(img['H']))-np.abs(dark_ratio(img_fromX)-dark_ratio(img['H']))) + np.abs(np.abs(dark_ratio(img['A'])-dark_ratio(img['E']))-np.abs(dark_ratio(img_fromX)-dark_ratio(img['E'])))
 
 # def check_dark_increase(list, incre_factor):  # check if there's an increment in dark_ratio
 #
@@ -217,21 +238,75 @@ def test_dark_ratio(img, imgX, thres):
             ans = int(key)
     return ans
 
+def test_DPR_IPR(img, imgX):
+    DPR_list = []
+    IPR_list = []
+    # # keys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+    # keys = img.keys()
+    # for k in sorted(img.iterkeys()):
+    #     dark_list.append(dark_ratio(img[k], thres))             # put dark ratio values into a list
+    #     dark_center_list.append(dark_center(img[k], thres))
+    for key, value in sorted(imgX.items()):
+        DPR_list.append(calc_DPR_diff(img,value))  # put dark ratio values into a list
+        IPR_list.append(calc_IPR_diff(img,value))
+
+    return (DPR_list,IPR_list)
+
+def rank_list(DPR_list):
+    seq = sorted(DPR_list)
+    DPR_rank = [seq.index(v) for v in DPR_list]
+    return DPR_rank
+
+def rank_vote_answers(DPR_rank,IPR_rank):
+    votes = [sum(x) for x in zip(DPR_rank,IPR_rank)]
+    return votes.index(min(votes))+1
+
+def sum_vote_answers(DPR_list,IPR_list,alpha = 1):                                               #thres!!!
+    aDPR_list = [alpha*x for x in DPR_list]
+    votes = [sum(x) for x in zip(aDPR_list,IPR_list)]
+    return votes.index(min(votes)) + 1
+
+def dot_sum_vote_answers(DPR_list,IPR_list,alpha = 1):                                               #thres!!!
+    dl = np.array(DPR_list)
+    il = np.array(IPR_list)
+    votes = dl*il/(dl+il)
+    votes = list(votes)
+    return votes.index(min(votes)) + 1
+
+
+def rolling_similarity(img, imgX, thres):
+    answer = 0
+    if fig_sim(img['A'], img['E']) > thres and fig_sim(img['B'], img['F']) > thres and fig_sim(img['C'],
+                                                                                                img['D']) > thres:
+
+        for key, value in imgX.items():
+            if fig_sim(value, img['E']) < thres:
+                answer = int(key)
+    return answer
 
 def img_subtract(imgA, imgB):  #
     diff = np.subtract(np.array(imgA, dtype='int8'), np.array(imgB, dtype='int8'))
     return diff
 
-answer = 0
-thre1 = 700
-thre2 = 100
-thre3 = 1800
-row_diff_sim = mse_array(img_subtract(img_subtract(img['A'],img['B']),img['C']),img_subtract(img_subtract(img['D'],img['E']),img['F']))
-if row_diff_sim < thre1:
-    for key,value in imgX.items():
-        add_rule = mse(value,img['C'])
-        if mse_array(img_subtract(img_subtract(img['A'],img['B']),img['C']),img_subtract(img_subtract(img['G'],img['H']),value)) < thre2 and add_rule < thre3:
-            answer = key
+def get_dark_rank():
+    for key, value in sorted(img.items()):
+        dark_list.append(dark_ratio(img[key]))  # put dark ratio values into a list
+
+
+(DPR_list,IPR_list) = test_DPR_IPR(img, imgX)
+# answer = rank_vote_answers(rank_list(DPR_list),rank_list(IPR_list))
+answer = dot_sum_vote_answers(DPR_list,IPR_list,1)
+#
+# answer = 0
+# thre1 = 700
+# thre2 = 100
+# thre3 = 1800
+# row_diff_sim = mse_array(img_subtract(img_subtract(img['A'],img['B']),img['C']),img_subtract(img_subtract(img['D'],img['E']),img['F']))
+# if row_diff_sim < thre1:
+#     for key,value in imgX.items():
+#         add_rule = mse(value,img['C'])
+#         if mse_array(img_subtract(img_subtract(img['A'],img['B']),img['C']),img_subtract(img_subtract(img['G'],img['H']),value)) < thre2 and add_rule < thre3:
+#             answer = key
 
 # row_diff_sim = mse_array(img_subtract(img_subtract(img['A'],img['D']),img['G']),img_subtract(img_subtract(img['B'],img['E']),img['H']))
 # if row_diff_sim < thre1:
@@ -257,7 +332,6 @@ print(answer)
 #     return answer
 
 
-answer = 0
 
 # def test_horiz_switch(img, imgX, thres):
 #     for key, value in imgX.items():

@@ -98,12 +98,12 @@ class Agent:
             combined_img.paste(imgX, (2 * w, 2 * h))
             return combined_img
 
-        def dark_ratio(img, thres):
+        def dark_ratio(img, thres=128):
             imgarray = np.array(img)
             img_tmp = imgarray.copy()
             img_tmp[imgarray > thres] = 0  # white to 0
             img_tmp[imgarray <= thres] = 1  # black to 1
-            return np.sum(img_tmp)
+            return np.sum(img_tmp) / (img.size[0] * img.size[1])
 
         def dark_center(img, thres):
             # add the rows and average them.
@@ -230,6 +230,82 @@ class Agent:
             # the two images are
             return err
 
+        def IPR(imageA, imageB, thres=128):
+            arrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=2)))
+            arrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=2)))
+            imgarrayA = arrayA.copy()
+            imgarrayB = arrayB.copy()
+            imgarrayA[arrayA > thres] = 1
+            imgarrayA[arrayA < thres] = 0
+            imgarrayB[arrayB > thres] = 1
+            imgarrayB[arrayB < thres] = 0
+            sum = (imgarrayA + imgarrayB)
+            both_white = np.count_nonzero(sum == 2)
+            one_dark = np.count_nonzero(sum == 1)
+            both_dark = np.count_nonzero(sum == 0)
+            return (both_dark, one_dark, both_white)
+
+        def IPR_ratio(imageA, imageB):
+            (both_dark, one_dark, both_white) = IPR(imageA, imageB)
+            sum = both_dark + one_dark + both_white
+            return (both_dark / sum, one_dark / sum)
+
+        def fig_sim(imageA, imageB, alpha=2):
+            (both_dark, one_dark, both_white) = IPR(imageA, imageB)
+            try:
+                return both_dark / (both_dark + alpha * one_dark)
+            except ZeroDivisionError as error:
+                print(problem.problemSetName)
+                return 0
+
+        def calc_IPR_diff(img, img_fromX):
+            return np.abs(fig_sim(img['C'], img['F']) - fig_sim(img_fromX, img['F'])) + np.abs(
+                fig_sim(img['G'], img['H']) - fig_sim(img_fromX, img['H']) + np.abs(
+                    fig_sim(img['A'], img['E']) - fig_sim(img_fromX, img['E'])))
+
+        def calc_DPR_diff(img, img_fromX):
+            return np.abs(np.abs(dark_ratio(img['C']) - dark_ratio(img['F'])) - np.abs(
+                dark_ratio(img_fromX) - dark_ratio(img['F']))) + np.abs(
+                np.abs(dark_ratio(img['G']) - dark_ratio(img['H'])) - np.abs(
+                    dark_ratio(img_fromX) - dark_ratio(img['H']))) + np.abs(
+                np.abs(dark_ratio(img['A']) - dark_ratio(img['E'])) - np.abs(
+                    dark_ratio(img_fromX) - dark_ratio(img['E'])))
+
+        def test_DPR_IPR(img, imgX):
+            DPR_list = []
+            IPR_list = []
+            # # keys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+            # keys = img.keys()
+            # for k in sorted(img.iterkeys()):
+            #     dark_list.append(dark_ratio(img[k], thres))             # put dark ratio values into a list
+            #     dark_center_list.append(dark_center(img[k], thres))
+            for key, value in sorted(imgX.items()):
+                DPR_list.append(calc_DPR_diff(img, value))  # put dark ratio values into a list
+                IPR_list.append(calc_IPR_diff(img, value))
+
+            return (DPR_list, IPR_list)
+
+        def rank_list(DPR_list):
+            seq = sorted(DPR_list)
+            DPR_rank = [seq.index(v) for v in DPR_list]
+            return DPR_rank
+
+        def rank_vote_answers(DPR_rank, IPR_rank):
+            votes = [sum(x) for x in zip(DPR_rank, IPR_rank)]
+            return votes.index(min(votes)) + 1
+
+        def sum_vote_answers(DPR_list, IPR_list, alpha=0.7):                                       # thres!!!
+            aDPR_list = [alpha * x for x in DPR_list]
+            votes = [sum(x) for x in zip(aDPR_list, IPR_list)]
+            return votes.index(min(votes)) + 1
+
+        def dot_sum_vote_answers(DPR_list, IPR_list, alpha=1):  # thres!!!
+            dl = np.array(DPR_list)
+            il = np.array(IPR_list)
+            votes = dl * il / (dl + il)
+            votes = list(votes)
+            return votes.index(min(votes)) + 1
+
         # construct dictionary for Set D images.
         for key, value in problem.figures.items():
             if problem.problemSetName[-1] == 'D' or problem.problemSetName[-1] == 'E':
@@ -251,17 +327,22 @@ class Agent:
             for key,value in imgX.items():
                 if self_symmetric(combine_figures(img, imgX[key]),100)==True:      # the threshold should be < 3000
                     answer = key
-            # Rule 2: The dark ratio method.
 
-            if answer == 0:
-                answer = rolling_similarity(img, imgX, 40)
+            # Rule 2: The rolling similarity.
 
-            if answer == 0:
-                answer = row_sub_similarity(img,imgX,700,100,1800)
+            # if answer == 0:
+            #     answer = rolling_similarity(img, imgX, 40)
+            #
+            # if answer == 0:
+            #     answer = row_sub_similarity(img,imgX,700,100,1800)
             # if answer == 0:
             #     answer = test_horiz_switch(img,imgX,2000)
-
-
+            # Rule 3: DPR and IPR
+            if answer == 0:
+                (DPR_list, IPR_list) = test_DPR_IPR(img, imgX)
+                # answer = sum_vote_answers(DPR_list, IPR_list)
+                answer = sum_vote_answers(rank_list(DPR_list), rank_list(IPR_list))
+                # answer = dot_sum_vote_answers(rank_list(DPR_list), rank_list(IPR_list))
             return int(answer)
 
         elif problem.problemSetName[-1] == 'E':
