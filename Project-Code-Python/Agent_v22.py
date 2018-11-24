@@ -201,34 +201,6 @@ class Agent:
                         answer = int(key)
             return answer
 
-        def row_sub_similarity(img,imgX,thre1,thre2,thre3):
-            answer = 0
-            row_diff_sim = mse_array(img_subtract(img_subtract(img['A'], img['B']), img['C']),
-                                     img_subtract(img_subtract(img['D'], img['E']), img['F']))
-            if row_diff_sim < thre1:
-                for key, value in imgX.items():
-                    add_rule = mse(value, img['C'])
-                    if mse_array(img_subtract(img_subtract(img['A'], img['B']), img['C']),
-                                 img_subtract(img_subtract(img['G'], img['H']), value)) < thre2 and add_rule < thre3:
-                        answer = key
-            return answer
-
-        def img_subtract(imgA, imgB):  #
-            diff = np.subtract(np.array(imgA, dtype='int8'), np.array(imgB, dtype='int8'))
-            return diff
-
-        def mse_array(imgarrayA, imgarrayB):  # eat up 2 arrays.
-            # the 'Mean Squared Error' between the two images is the
-            # sum of the squared difference between the two images;
-            # NOTE: the two images must have the same dimension
-            # imgarrayA = array_blur(imgarrayA)
-            # imgarrayB = array_blur(imgarrayB)
-            err = np.sum((imgarrayA.astype("float") - imgarrayB.astype("float")) ** 2)
-            err /= float(imgarrayA.shape[0] * imgarrayA.shape[1])
-
-            # return the MSE, the lower the error, the more "similar"
-            # the two images are
-            return err
 
         # construct dictionary for Set D images.
         for key, value in problem.figures.items():
@@ -255,9 +227,6 @@ class Agent:
 
             if answer == 0:
                 answer = rolling_similarity(img, imgX, 40)
-
-            if answer == 0:
-                answer = row_sub_similarity(img,imgX,700,100,1800)
             # if answer == 0:
             #     answer = test_horiz_switch(img,imgX,2000)
 
