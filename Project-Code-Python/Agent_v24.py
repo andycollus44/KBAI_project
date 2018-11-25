@@ -35,7 +35,6 @@ class Agent:
         from PIL import Image
         from PIL import ImageFilter
         import numpy as np
-        import PIL.ImageOps as op
         img = {}  # clues
         imgX = {}  # solutions
         # angel_set = np.array([0, 30, 45, 60, 90])  # remember to fill the background as white.
@@ -307,21 +306,6 @@ class Agent:
             votes = list(votes)
             return votes.index(min(votes)) + 1
 
-
-        # Set E functions
-        def img_add(imgA, imgB):
-            sum_array = np.array(op.invert(imgA)) + np.array(op.invert(imgB))
-            return op.invert(Image.fromarray(sum_array))
-
-        def test_add(img,imgX,thres = 0.8):
-            if fig_sim(img_add(img['A'], img['B']), img['C']) > thres:
-                min_sim = 0
-                for key, value in imgX.items():
-                    if fig_sim(img_add(img['G'], img['H']), value) > min_sim:
-                        min_sim = fig_sim(img_add(img['G'], img['H']), value)
-                        answer = key
-            return answer
-
         # construct dictionary for Set D images.
         for key, value in problem.figures.items():
             if problem.problemSetName[-1] == 'D' or problem.problemSetName[-1] == 'E':
@@ -338,7 +322,7 @@ class Agent:
         # select Set D, E:
         # select Set D, E:
         # select Set D, E:
-        if problem.problemSetName[-1] == 'D':
+        if problem.problemSetName[-1] == 'D' or problem.problemSetName[-1] == 'E':
             # Rule 1: The combined figure is symmetric to itself.
             for key,value in imgX.items():
                 if self_symmetric(combine_figures(img, imgX[key]),100)==True:      # the threshold should be < 3000
@@ -362,8 +346,8 @@ class Agent:
             return int(answer)
 
         elif problem.problemSetName[-1] == 'E':
-            answer = test_add(img,imgX,0.8)
-            return int(answer)
+
+            return 0
 
         else:
             return 0
