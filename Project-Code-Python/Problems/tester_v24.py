@@ -8,7 +8,7 @@ import time
 #
 # home = 'C:/Users/s2235/PycharmProjects/KBAI_project/Project-Code-Python/'
 home = 'd:/PycharmProjects/KBAI_project/Project-Code-Python/'
-problemset = 'Basic Problems E/Basic Problem E-01/'
+problemset = 'Basic Problems E/Basic Problem E-11/'
 os.chdir(home + 'Problems/' + problemset)
 
 images = {}
@@ -32,7 +32,7 @@ for key, value in images.items():
         # imgX[key] = np.array(Image.open(images[key]))
         #imgX[key] = img_threshold(np.array(Image.open(images[key])), 128)
 
-def IPR(imageA,imageB,thres=128):
+def IPR(imageA,imageB,thres=200):
     arrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=4)))
     arrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=4)))
     imgarrayA = arrayA.copy()
@@ -142,7 +142,7 @@ def combine_figures(img_dic,imgX):      # update for 3x3 problem
     combined_img.paste(imgX, (2*w, 2*h))
     return combined_img
 
-def dark_ratio(img,thres = 128):
+def dark_ratio(img,thres = 200):
     imgarray = np.array(img)
     img_tmp = imgarray.copy()
     img_tmp[imgarray > thres] = 0  # white to 0
@@ -308,14 +308,66 @@ def img_add(imgA,imgB):
     sum_array = np.array(op.invert(imgA))+np.array(op.invert(imgB))
     return op.invert(Image.fromarray(sum_array))
 
+def img_subtract(imgA,imgB):
+    diff_array = np.array(op.invert(imgA)) - np.array(op.invert(imgB))
+    return op.invert(Image.fromarray(diff_array))
 
-if fig_sim(img_add(img['A'],img['B']),img['C']) > 0.85:
-    min_sim = 0
-    for key, value in imgX.items():
-        if fig_sim(img_add(img['G'], img['H']), value) > min_sim:
-            min_sim = fig_sim(img_add(img['G'], img['H']), value)
-            answer = key
+def img_xor_int16(imgA,imgB):
+    sum_array = np.array(op.invert(imgA),dtype=np.int16) + np.array(op.invert(imgB),dtype=np.int16)
+    xor_array = np.array(sum_array,dtype = np.int8)
+    xor_array[sum_array >255] =0
+    xor_array = np.array(xor_array,dtype=np.uint8)
+    return op.invert(Image.fromarray(xor_array))
+
+def img_and_int16(imgA,imgB):
+    sum_array = np.array(op.invert(imgA),dtype=np.int16) + np.array(op.invert(imgB),dtype=np.int16)
+    and_array = np.array(sum_array,dtype = np.int8)
+    and_array[sum_array <=255] =0
+    and_array[sum_array > 255] = 255
+    and_array = np.array(and_array,dtype=np.uint8)
+    return op.invert(Image.fromarray(and_array))
+
+def test_add(img, imgX, thres=0.8):
+    answer = 0
+    if fig_sim(img_add(img['A'], img['B']), img['C']) > thres:
+        min_sim = 0
+        for key, value in imgX.items():
+            if fig_sim(img_add(img['G'], img['H']), value) > min_sim:
+                min_sim = fig_sim(img_add(img['G'], img['H']), value)
+                answer = key
+    return answer
 #
+def test_subtract(img,imgX,thres = 0.8):
+    answer = 0
+    if fig_sim(img_subtract(img['A'], img['B']), img['C']) > thres:
+        min_sim = 0
+        for key, value in imgX.items():
+            if fig_sim(img_subtract(img['G'], img['H']), value) > min_sim:
+                min_sim = fig_sim(img_subtract(img['G'], img['H']), value)
+                answer = key
+    return answer
+
+def test_xor(img,imgX,thres = 0.8):
+    answer = 0
+    if fig_sim(img_xor_int16(img['A'], img['B']), img['C']) > thres:
+        min_sim = 0
+        for key, value in imgX.items():
+            if fig_sim(img_xor_int16(img['G'], img['H']), value) > min_sim:
+                min_sim = fig_sim(img_xor_int16(img['G'], img['H']), value)
+                answer = key
+    return answer
+
+def test_and(img,imgX,thres = 0.8):
+    answer = 0
+    if fig_sim(img_and_int16(img['A'], img['B']), img['C']) > thres:
+        min_sim = 0
+        for key, value in imgX.items():
+            if fig_sim(img_and_int16(img['G'], img['H']), value) > min_sim:
+                min_sim = fig_sim(img_and_int16(img['G'], img['H']), value)
+                answer = key
+    return answer
+
+answer = test_and(img,imgX,0.8)
 # answer = 0
 # thre1 = 700
 # thre2 = 100

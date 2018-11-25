@@ -99,7 +99,7 @@ class Agent:
             combined_img.paste(imgX, (2 * w, 2 * h))
             return combined_img
 
-        def dark_ratio(img, thres=128):
+        def dark_ratio(img, thres=200):
             imgarray = np.array(img)
             img_tmp = imgarray.copy()
             img_tmp[imgarray > thres] = 0  # white to 0
@@ -231,9 +231,9 @@ class Agent:
             # the two images are
             return err
 
-        def IPR(imageA, imageB, thres=128):
-            arrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=2)))
-            arrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=2)))
+        def IPR(imageA, imageB, thres=200):
+            arrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=4)))
+            arrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=4)))
             imgarrayA = arrayA.copy()
             imgarrayB = arrayB.copy()
             imgarrayA[arrayA > thres] = 1
@@ -295,7 +295,7 @@ class Agent:
             votes = [sum(x) for x in zip(DPR_rank, IPR_rank)]
             return votes.index(min(votes)) + 1
 
-        def sum_vote_answers(DPR_list, IPR_list, alpha=0.7):                                       # thres!!!
+        def sum_vote_answers(DPR_list, IPR_list, alpha=1):                                       # thres!!!
             aDPR_list = [alpha * x for x in DPR_list]
             votes = [sum(x) for x in zip(aDPR_list, IPR_list)]
             return votes.index(min(votes)) + 1
@@ -313,7 +313,27 @@ class Agent:
             sum_array = np.array(op.invert(imgA)) + np.array(op.invert(imgB))
             return op.invert(Image.fromarray(sum_array))
 
+        def img_subtract(imgA, imgB):
+            diff_array = np.array(op.invert(imgA)) - np.array(op.invert(imgB))
+            return op.invert(Image.fromarray(diff_array))
+
+        def img_xor_int16(imgA, imgB):
+            sum_array = np.array(op.invert(imgA), dtype=np.int16) + np.array(op.invert(imgB), dtype=np.int16)
+            xor_array = np.array(sum_array, dtype=np.int8)
+            xor_array[sum_array > 255] = 0
+            xor_array = np.array(xor_array, dtype=np.uint8)
+            return op.invert(Image.fromarray(xor_array))
+
+        def img_and_int16(imgA, imgB):
+            sum_array = np.array(op.invert(imgA), dtype=np.int16) + np.array(op.invert(imgB), dtype=np.int16)
+            and_array = np.array(sum_array, dtype=np.int8)
+            and_array[sum_array <= 255] = 0
+            and_array[sum_array > 255] = 255
+            and_array = np.array(and_array, dtype=np.uint8)
+            return op.invert(Image.fromarray(and_array))
+
         def test_add(img,imgX,thres = 0.8):
+            answer = 0
             if fig_sim(img_add(img['A'], img['B']), img['C']) > thres:
                 min_sim = 0
                 for key, value in imgX.items():
@@ -321,6 +341,37 @@ class Agent:
                         min_sim = fig_sim(img_add(img['G'], img['H']), value)
                         answer = key
             return answer
+
+        def test_subtract(img, imgX, thres=0.8):
+            answer = 0
+            if fig_sim(img_subtract(img['A'], img['B']), img['C']) > thres:
+                min_sim = 0
+                for key, value in imgX.items():
+                    if fig_sim(img_subtract(img['G'], img['H']), value) > min_sim:
+                        min_sim = fig_sim(img_subtract(img['G'], img['H']), value)
+                        answer = key
+            return answer
+
+        def test_xor(img, imgX, thres=0.8):
+            answer = 0
+            if fig_sim(img_xor_int16(img['A'], img['B']), img['C']) > thres:
+                min_sim = 0
+                for key, value in imgX.items():
+                    if fig_sim(img_xor_int16(img['G'], img['H']), value) > min_sim:
+                        min_sim = fig_sim(img_xor_int16(img['G'], img['H']), value)
+                        answer = key
+            return answer
+
+        def test_and(img, imgX, thres=0.8):
+            answer = 0
+            if fig_sim(img_and_int16(img['A'], img['B']), img['C']) > thres:
+                min_sim = 0
+                for key, value in imgX.items():
+                    if fig_sim(img_and_int16(img['G'], img['H']), value) > min_sim:
+                        min_sim = fig_sim(img_and_int16(img['G'], img['H']), value)
+                        answer = key
+            return answer
+
 
         # construct dictionary for Set D images.
         for key, value in problem.figures.items():
@@ -363,6 +414,14 @@ class Agent:
 
         elif problem.problemSetName[-1] == 'E':
             answer = test_add(img,imgX,0.8)
+            if answer == 0:
+                answer = test_subtract(img, imgX, 0.8)
+
+            if answer == 0:
+
+                answer = test_xor(img, imgX, 0.7)
+            if answer == 0:
+                answer = test_and(img, imgX, 0.8)
             return int(answer)
 
         else:
