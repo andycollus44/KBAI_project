@@ -207,23 +207,72 @@ def img_subtract(imgA, imgB):  #
     diff = np.subtract(np.array(imgA, dtype='int8'), np.array(imgB, dtype='int8'))
     return diff
 
-answer = 0
-thre1 = 700
-thre2 = 100
-thre3 = 1800
-row_diff_sim = mse_array(img_subtract(img_subtract(img['A'],img['B']),img['C']),img_subtract(img_subtract(img['D'],img['E']),img['F']))
-if row_diff_sim < thre1:
-    for key,value in imgX.items():
-        add_rule = mse(value,img['C'])
-        if mse_array(img_subtract(img_subtract(img['A'],img['B']),img['C']),img_subtract(img_subtract(img['G'],img['H']),value)) < thre2 and add_rule < thre3:
-            answer = key
+
+def IPR(imageA, imageB, thres=200, gbr=4):
+    arrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=gbr)))
+    arrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=gbr)))
+    imgarrayA = arrayA.copy()
+    imgarrayB = arrayB.copy()
+    imgarrayA[arrayA > thres] = 1
+    imgarrayA[arrayA < thres] = 0
+    imgarrayB[arrayB > thres] = 1
+    imgarrayB[arrayB < thres] = 0
+    sum = (imgarrayA + imgarrayB)
+    both_white = np.count_nonzero(sum == 2)
+    one_dark = np.count_nonzero(sum == 1)
+    both_dark = np.count_nonzero(sum == 0)
+    return (both_dark, one_dark, both_white)
+
+def fig_sim(imageA, imageB, alpha=2):
+    (both_dark, one_dark, both_white) = IPR(imageA, imageB)
+    try:
+        return both_dark / (both_dark + alpha * one_dark)
+    except ZeroDivisionError as error:
+        print(0)
+        return 0
+
+def rolling_similarity(img, imgX, thres):
+    answer = 0
+    if fig_sim(img['A'], img['E']) > thres and fig_sim(img['B'], img['F']) > thres and fig_sim(img['C'],
+                                                                                                img['D']) > thres:
+
+        for key, value in imgX.items():
+            if fig_sim(value, img['E']) > thres:
+                answer = int(key)
+    return answer
+
+
+def rolling_similarity_crop(img, imgX, thres, radius=65):
+    answer = 0
+    if fig_sim(img['A'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+            img['E'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres and fig_sim(
+            img['B'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+            img['F'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres and fig_sim(
+            img['C'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+            img['D'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres:
+        for key, value in imgX.items():
+            if fig_sim(value.crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)), img['E'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres:
+                answer = int(key)
+    return answer
+
+# answer = 0
+# thre1 = 700
+# thre2 = 100
+# thre3 = 1800
+# row_diff_sim = mse_array(img_subtract(img_subtract(img['A'],img['B']),img['C']),img_subtract(img_subtract(img['D'],img['E']),img['F']))
+# if row_diff_sim < thre1:
+#     for key,value in imgX.items():
+#         add_rule = mse(value,img['C'])
+#         if mse_array(img_subtract(img_subtract(img['A'],img['B']),img['C']),img_subtract(img_subtract(img['G'],img['H']),value)) < thre2 and add_rule < thre3:
+#             answer = key
 
 # row_diff_sim = mse_array(img_subtract(img_subtract(img['A'],img['D']),img['G']),img_subtract(img_subtract(img['B'],img['E']),img['H']))
 # if row_diff_sim < thre1:
 #     for key,value in imgX.items():
 #         if mse_array(img_subtract(img_subtract(img['A'],img['D']),img['G']),img_subtract(img_subtract(img['C'],img['F']),value)) < thre2:
 #             answer = key
-
+answer = 0
+answer = rolling_similarity_crop(img,imgX,0.9,50)
 print(answer)
 
 # for key, value in imgX.items():

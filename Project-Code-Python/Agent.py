@@ -194,12 +194,40 @@ class Agent:
 
         def rolling_similarity(img, imgX, thres):
             answer = 0
-            if mset(img['A'], img['E'], 128) < thres and mset(img['B'], img['F'],128) < thres and mset(img['C'],
-                                                                                                 img['D'],128) < thres:
+            if fig_sim(img['A'], img['E']) > thres and fig_sim(img['B'], img['F']) > thres and fig_sim(img['C'],
+                                                                                                       img[
+                                                                                                           'D']) > thres:
 
                 for key, value in imgX.items():
-                    if mse(value, img['E']) < thres:
+                    if fig_sim(value, img['E']) > thres:
                         answer = int(key)
+            return answer
+
+        def rolling_similarity_crop(img, imgX, thres, radius=65):
+            answer = 0
+            if fig_sim(img['A'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+                       img['E'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres and fig_sim(
+                img['B'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+                img['F'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres and fig_sim(
+                img['C'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+                img['D'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres:
+                for key, value in imgX.items():
+                    if fig_sim(value.crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+                               img['E'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres:
+                        answer = int(key)
+            return answer
+
+        def rolling_similarity_crop_back(img, imgX, thres, radius=50):
+            answer = 0
+            if fig_sim(img['A'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+                       img['F'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres and fig_sim(
+                img['B'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+                img['D'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres and fig_sim(
+                img['C'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+                img['E'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres:
+                if fig_sim(value.crop((91 - radius, 91 - radius, 91 + radius, 91 + radius)),
+                           img['D'].crop((91 - radius, 91 - radius, 91 + radius, 91 + radius))) > thres:
+                    answer = int(key)
             return answer
 
         def row_sub_similarity(img,imgX,thre1,thre2,thre3):
@@ -231,9 +259,9 @@ class Agent:
             # the two images are
             return err
 
-        def IPR(imageA, imageB, thres=200):
-            arrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=4)))
-            arrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=4)))
+        def IPR(imageA, imageB, thres=200,gbr = 4):
+            arrayA = np.array(imageA.filter(ImageFilter.GaussianBlur(radius=gbr)))
+            arrayB = np.array(imageB.filter(ImageFilter.GaussianBlur(radius=gbr)))
             imgarrayA = arrayA.copy()
             imgarrayB = arrayB.copy()
             imgarrayA[arrayA > thres] = 1
@@ -259,10 +287,18 @@ class Agent:
                 print(problem.problemSetName)
                 return 0
 
+        def fig_sim_gbr(imageA, imageB, alpha=2,gbr = 10):
+            (both_dark, one_dark, both_white) = IPR(imageA, imageB,200,gbr)              # thres gbr!!
+            try:
+                return both_dark / (both_dark + alpha * one_dark)
+            except ZeroDivisionError as error:
+                print(problem.problemSetName)
+                return 0
+
         def calc_IPR_diff(img, img_fromX):
-            return np.abs(fig_sim(img['C'], img['F']) - fig_sim(img_fromX, img['F'])) + np.abs(
-                fig_sim(img['G'], img['H']) - fig_sim(img_fromX, img['H']) + np.abs(
-                    fig_sim(img['A'], img['E']) - fig_sim(img_fromX, img['E'])))
+            return np.abs(fig_sim_gbr(img['C'], img['F']) - fig_sim_gbr(img_fromX, img['F'])) + np.abs(
+                fig_sim_gbr(img['G'], img['H']) - fig_sim_gbr(img_fromX, img['H']) + np.abs(
+                    fig_sim_gbr(img['A'], img['E']) - fig_sim_gbr(img_fromX, img['E'])))
 
         def calc_DPR_diff(img, img_fromX):
             return np.abs(np.abs(dark_ratio(img['C']) - dark_ratio(img['F'])) - np.abs(
@@ -291,11 +327,12 @@ class Agent:
             DPR_rank = [seq.index(v) for v in DPR_list]
             return DPR_rank
 
-        def rank_vote_answers(DPR_rank, IPR_rank):
-            votes = [sum(x) for x in zip(DPR_rank, IPR_rank)]
+        def rank_vote_answers(DPR_rank, IPR_rank,alpha = 1):
+            aDPR_rank = [alpha * x for x in DPR_rank]
+            votes = [sum(x) for x in zip(aDPR_rank, IPR_rank)]
             return votes.index(min(votes)) + 1
 
-        def sum_vote_answers(DPR_list, IPR_list, alpha=1):                                       # thres!!!
+        def sum_vote_answers(DPR_list, IPR_list, alpha=2):                                       # thres!!!
             aDPR_list = [alpha * x for x in DPR_list]
             votes = [sum(x) for x in zip(aDPR_list, IPR_list)]
             return votes.index(min(votes)) + 1
@@ -397,9 +434,15 @@ class Agent:
 
             # Rule 2: The rolling similarity.
 
-            # if answer == 0:
-            #     answer = rolling_similarity(img, imgX, 40)
-            #
+            if answer == 0:
+                answer = rolling_similarity(img, imgX, 0.8)
+
+            if answer == 0:
+                answer = rolling_similarity_crop(img, imgX, 0.8,30)
+
+            if answer == 0:
+                answer = rolling_similarity_crop_back(img, imgX, 0.8,30)
+
             # if answer == 0:
             #     answer = row_sub_similarity(img,imgX,700,100,1800)
             # if answer == 0:
@@ -407,7 +450,7 @@ class Agent:
             # Rule 3: DPR and IPR
             if answer == 0:
                 (DPR_list, IPR_list) = test_DPR_IPR(img, imgX)
-                # answer = sum_vote_answers(DPR_list, IPR_list)
+                # answer = rank_vote_answers(DPR_list, IPR_list)
                 answer = sum_vote_answers(rank_list(DPR_list), rank_list(IPR_list))
                 # answer = dot_sum_vote_answers(rank_list(DPR_list), rank_list(IPR_list))
             return int(answer)
